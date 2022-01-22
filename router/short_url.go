@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
+
 	"shurl/common"
 	"shurl/dao"
 
@@ -15,6 +17,11 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	validUrl = regexp.MustCompile(`[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?`)
+)
+
+// genShortUrl generates short url according to the original url
 func genShortUrl(url string) string {
 	h := md5.New()
 	io.WriteString(h, url)
@@ -25,6 +32,7 @@ func genShortUrl(url string) string {
 }
 
 func registerShortUrlAPIs(r *gin.RouterGroup) {
+	// generate short url
 	r.POST("/shorten", func(c *gin.Context) {
 		// parse request body
 		type Req struct {
@@ -32,8 +40,16 @@ func registerShortUrlAPIs(r *gin.RouterGroup) {
 		}
 		req := Req{}
 		if err := c.BindJSON(&req); err != nil {
+			log.Printf("failed to bind json: %v\n", err)
 			c.JSON(http.StatusBadRequest, gin.H{
-				"message": err,
+				"message": err.Error(),
+			})
+			return
+		}
+
+		if !validUrl.MatchString(req.Url) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "invalid url",
 			})
 			return
 		}
@@ -78,6 +94,7 @@ func registerShortUrlAPIs(r *gin.RouterGroup) {
 		}
 	})
 
+	// get original url
 	r.GET("/url/:short_url", func(c *gin.Context) {
 		shortUrl := c.Param("short_url")
 		if len(shortUrl) != common.ShortUrlLen {
