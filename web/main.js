@@ -7,7 +7,11 @@ async function postData(url, data) {
         },
         body: JSON.stringify(data)
     });
-    return response.json();
+    if (response.ok) {
+        return await response.json();
+    } else {
+        throw await response.json();
+    }
 }
 
 async function getData(url) {
@@ -18,32 +22,51 @@ async function getData(url) {
             'Content-Type': 'application/json'
         },
     })
-    return response.json();
+    if (response.ok) {
+        return await response.json();
+    } else {
+        throw await response.json();
+    }
 }
 
 const EventHandling = {
     data() {
         return {
-            original_url: 'Hello Vue.js!',
+            original_url: 'http://www.example.com',
             short_url_view: '',
-            short_url: 'short url',
+            shorten_error: false,
+            short_url: '',
             original_url_view: '',
+            lookup_error: false,
         }
     },
     methods: {
         genShortUrl() {
             postData('http://localhost:8080/api/shorten', {
                 url: this.original_url
-            })
-            .then(data => {
+            }).then(data => {
                 this.short_url_view = data.link
+                this.shorten_error = false
+            }).catch(error => {
+                console.log(error)
+                this.short_url_view = error.message
+                this.shorten_error = true
             })
         },
         getOriginalUrl() {
+            if (this.short_url.length === 0) {
+                console.log('skip')
+                return
+            }
             getData(`http://localhost:8080/api/url/${this.short_url}`)
-            .then(data => {
-                this.original_url_view = data.url
-            })
+                .then(data => {
+                    this.original_url_view = data.url
+                    this.lookup_error = true
+                }).catch(error => {
+                    console.log(error)
+                    this.original_url_view = error.message
+                    this.lookup_error = true
+                })
         }
     }
 }
