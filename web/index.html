@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homebrew Url Shortener</title>
+    <script src="https://unpkg.com/vue@next"></script>
+</head>
+
+<body>
+    <div id="url-shortener">
+        <span>original url: </span>
+        <input v-model="original_url" />
+        <button v-on:click="genShortUrl">Shorten</button>
+        <p>
+            <span>short url: </span>
+            <span>{{ short_url_view }}</span>
+        </p>
+
+        <span>short url: </span>
+        <input v-model="short_url" />
+        <button v-on:click="getOriginalUrl">Original</button>
+        <p>
+            <span>original url: </span>
+            <span>{{ original_url_view }}</span>
+        </p>
+    </div>
+    <script src="main.js"></script>
+</body>
+
+</html>
