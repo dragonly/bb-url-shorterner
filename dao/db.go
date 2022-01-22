@@ -7,6 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
+type Database interface {
+	First(dest interface{}, conds ...interface{}) *gorm.DB
+	Create(value interface{}) *gorm.DB
+}
+
 var DB *gorm.DB
 
 func InitDB(filename string) {

@@ -31,7 +31,7 @@ func genShortUrl(url string) string {
 	return base64.URLEncoding.EncodeToString(sum[:6])[:common.ShortUrlLen]
 }
 
-func registerShortUrlAPIs(r *gin.RouterGroup) {
+func registerShortUrlAPIs(r *gin.RouterGroup, db dao.Database) {
 	// generate short url
 	r.POST("/shorten", func(c *gin.Context) {
 		// parse request body
@@ -61,7 +61,7 @@ func registerShortUrlAPIs(r *gin.RouterGroup) {
 				Short:    shortUrl,
 				Original: req.Url,
 			}
-			if err := dao.DB.Create(&urlModel).Error; err != nil {
+			if err := db.Create(&urlModel).Error; err != nil {
 				if sqliteErr, ok := err.(sqlite3.Error); ok {
 					if sqliteErr.Code == sqlite3.ErrConstraint {
 						// duplicated short url (violates primary key constraint)
@@ -107,7 +107,7 @@ func registerShortUrlAPIs(r *gin.RouterGroup) {
 		urlModel := dao.Url{
 			Short: shortUrl,
 		}
-		if err := dao.DB.First(&urlModel).Error; err != nil {
+		if err := db.First(&urlModel).Error; err != nil {
 			if _, ok := err.(sqlite3.Error); ok {
 				// database errors
 				log.Printf("Error: database error, %v\n", err)
