@@ -6,19 +6,19 @@ It converts a long url to a short url in 7 characters, and converts the short ur
 
 Posting the same long url multiple times will produce different short links.
 
-# Instructions
+# Start
 
-## start server
+Run instructions below to start the server.
 
-Run instructions below to start the server. It will also create a sqlite3 database file if not present.
+Visit http://localhost:8080 to play.
 
 ```bash
 make run
 ```
 
-## test and coverage
+# Test
 
-This demo is 100% test covered. The trickest part is the db mocking.
+This demo is 100% test covered. The trickiest part is the db mocking.
 
 ```bash
 # run test only
@@ -27,6 +27,6 @@ make test
 make coverage
 ```
 
-# Mocking
+## Mock
 
-The test cases mock database using `gomock`.
+The test cases mock database using [gomock](https://github.com/golang/mock).

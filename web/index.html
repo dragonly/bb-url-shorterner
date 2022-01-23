@@ -5,27 +5,35 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Homebrew Url Shortener</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+    <title>Shurl - Url Shortener</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap');
+    </style>
     <script src="https://unpkg.com/vue@next"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        button:hover {
+            background-color: rgb(55, 90, 207) !important;
+        }
+    </style>
 </head>
 
 <body style="background-color: #0b1736;">
     <div class="container mx-auto max-w-screen-md text-white text-lg font-mono space-y-12" id="url-shortener">
         <div class="flex flex-row h-24">
-            <div class="w-full py-8 text-7xl text-center" style="font-family: 'Dancing Script', cursive; color: rgb(222,106,55);">Shurl</div>
+            <div class="w-full py-8 text-7xl text-center"
+                style="font-family: 'Dancing Script', cursive; color: rgb(222,106,55);">Shurl</div>
         </div>
 
+        <!-- shorten -->
         <div class="space-y-4">
             <div class="flex flex-row h-8 text-sm">
                 Enter a link below and click the shorten button
             </div>
             <div class="flex flex-row h-12 space-x-8">
                 <div class="basis-1/5 py-2 text-right">original url</div>
-                <input class="basis-3/5 rounded text-black px-2" v-model="original_url" spellcheck="false" />
+                <input placeholder="http://www.example.com" class="basis-3/5 rounded text-black px-2"
+                    v-model="original_url" spellcheck="false" />
                 <button class="basis-1/5 rounded" style="background-color: #1b3987;"
                     v-on:click="genShortUrl">Shorten</button>
             </div>
@@ -37,6 +45,7 @@
             </div>
         </div>
 
+        <!-- lookup -->
         <div class="space-y-4">
             <div class="flex flex-row h-8 text-sm text-gary-300">
                 Enter a short link below and click the "Get Link" button to get the original url
@@ -44,8 +53,8 @@
             <div class="flex flex-row h-12 space-x-8">
                 <div class="basis-1/5 py-2 text-right">short url</div>
                 <input class="basis-3/5 rounded text-black px-2" v-model="short_url" spellcheck="false" />
-                <button class="basis-1/5 rounded" style="background-color: #1b3987;"
-                    v-on:click="getOriginalUrl">Get Link</button>
+                <button class="basis-1/5 rounded" style="background-color: #1b3987;" v-on:click="getOriginalUrl">Get
+                    Link</button>
             </div>
             <div class="flex flex-row h-12 space-x-8 py-2">
                 <div class="basis-1/5 text-right">original url</div>

@@ -32,9 +32,11 @@ async function getData(url) {
 const EventHandling = {
     data() {
         return {
-            original_url: 'http://www.example.com',
+            // variables related to shorten api
+            original_url: '',
             short_url_view: '',
             shorten_error: false,
+            // variables related to original url lookup api
             short_url: '',
             original_url_view: '',
             lookup_error: false,
@@ -48,7 +50,7 @@ const EventHandling = {
                 this.short_url_view = data.link
                 this.shorten_error = false
             }).catch(error => {
-                console.log(error)
+                console.error(error)
                 this.short_url_view = error.message
                 this.shorten_error = true
             })
@@ -63,7 +65,7 @@ const EventHandling = {
                     this.original_url_view = data.url
                     this.lookup_error = true
                 }).catch(error => {
-                    console.log(error)
+                    console.error(error)
                     this.original_url_view = error.message
                     this.lookup_error = true
                 })

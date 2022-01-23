@@ -25,24 +25,18 @@ import (
 type RouterSuite struct {
 	suite.Suite
 	router *gin.Engine
-	urls   []dao.Url
+}
+
+type Response struct {
+	Message string `json:"message"`
 }
 
 const (
 	dbName = "router.db"
-	count  = 10000
 )
 
 func (s *RouterSuite) setupDB() dao.Database {
 	dao.InitDB(dbName)
-	s.urls = make([]dao.Url, 0, count)
-	for i := 0; i < count; i++ {
-		url := dao.Url{
-			Original: "http://test.com/" + common.RandString(100),
-		}
-		s.urls = append(s.urls, url)
-		// log.Printf("generated url: %v\n", s.urls)
-	}
 	return dao.DB
 }
 
@@ -63,7 +57,9 @@ func (s *RouterSuite) TearDownSuite() {
 	tearDownDB()
 }
 
-// test success path
+// test the normal cases:
+// 1. generate a batch of random long url, and call the shorten api to get the corresponding short links
+// 2. call the lookup api to check that all the short - original url mappings are correct
 func (s *RouterSuite) TestGenShortUrlAndLookUpOriginalUrl() {
 	type Res1 struct {
 		Link string `json:"link"`
@@ -72,21 +68,28 @@ func (s *RouterSuite) TestGenShortUrlAndLookUpOriginalUrl() {
 		Url string `json:"url"`
 	}
 	log.Println("generating short urls")
-	for i, url := range s.urls {
+	const count = 10000
+	urls := make([]dao.Url, 0, count)
+	for i := 0; i < count; i++ {
+		url := dao.Url{
+			Original: "http://test.com/" + common.RandString(100),
+		}
+		urls = append(urls, url)
+	}
+	for i, url := range urls {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("POST", "/api/shorten", strings.NewReader(fmt.Sprintf("{\"url\":\"%s\"}", url.Original)))
 		s.router.ServeHTTP(w, req)
-
 		s.Equal(http.StatusOK, w.Code)
 		res := Res1{}
 		s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 		s.Equal(common.ShortUrlLen, len(res.Link))
 		// store short link for later look up test
-		s.urls[i].Short = res.Link
+		urls[i].Short = res.Link
 	}
 
 	log.Println("look up original urls")
-	for _, url := range s.urls {
+	for _, url := range urls {
 		w := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/api/url/%s", url.Short), nil)
 		s.router.ServeHTTP(w, req)
@@ -98,48 +101,41 @@ func (s *RouterSuite) TestGenShortUrlAndLookUpOriginalUrl() {
 	}
 }
 
+// test the shorten api expecting bad json error
 func (s *RouterSuite) TestGenShortUrlBadJson() {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/shorten", strings.NewReader("bad json"))
 	s.router.ServeHTTP(w, req)
-
 	s.Equal(http.StatusBadRequest, w.Code)
-	type Res struct {
-		Message string `json:"message"`
-	}
-	res := Res{}
+	res := Response{}
 	s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 	s.Equal("invalid character 'b' looking for beginning of value", res.Message)
 }
 
+// test the shorten api expecting invalid url error
 func (s *RouterSuite) TestGenShortUrlInvalidUrl() {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("POST", "/api/shorten", strings.NewReader("{\"url\":\"bad url\"}"))
 	s.router.ServeHTTP(w, req)
-
 	s.Equal(http.StatusBadRequest, w.Code)
-	type Res struct {
-		Message string `json:"message"`
-	}
-	res := Res{}
+	res := Response{}
 	s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 	s.Equal("invalid url", res.Message)
 }
 
+// test the lookup api expecting invalid url error (can not past the regex test)
 func (s *RouterSuite) TestLookUpOriginalUrlInvalidShortUrl() {
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/api/url/invalid_short_url", nil)
 	s.router.ServeHTTP(w, req)
-
 	s.Equal(http.StatusBadRequest, w.Code)
-	type Res struct {
-		Message string `json:"message"`
-	}
-	res := Res{}
+	res := Response{}
 	s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 	s.Equal("invalid short url", res.Message)
 }
 
+// test the shorten api's code paths handling database errors
+// use mock to trigger database errors
 func (s *RouterSuite) TestGenShortUrlErrors() {
 	ctrl := gomock.NewController(s.T())
 	db := dao.NewMockDatabase(ctrl)
@@ -151,10 +147,7 @@ func (s *RouterSuite) TestGenShortUrlErrors() {
 		req, _ := http.NewRequest("POST", "/api/shorten", strings.NewReader("{\"url\":\"www.test.com\"}"))
 		router.ServeHTTP(w, req)
 		s.Equal(http.StatusInternalServerError, w.Code)
-		type Res struct {
-			Message string `json:"message"`
-		}
-		res := Res{}
+		res := Response{}
 		s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 		s.Equal("error has occurred", res.Message)
 	}
@@ -172,6 +165,9 @@ func (s *RouterSuite) TestGenShortUrlErrors() {
 		testHTTP()
 	})
 }
+
+// test the lookup api's code paths handling database errors
+// use mock to trigger database errors
 func (s *RouterSuite) TestLookUpOriginalUrlErrors() {
 	ctrl := gomock.NewController(s.T())
 	db := dao.NewMockDatabase(ctrl)
@@ -185,10 +181,7 @@ func (s *RouterSuite) TestLookUpOriginalUrlErrors() {
 		db.EXPECT().First(gomock.Any()).Return(&gorm.DB{Error: sqlite3.Error{}})
 		router.ServeHTTP(w, req)
 		s.Equal(http.StatusInternalServerError, w.Code)
-		type Res struct {
-			Message string `json:"message"`
-		}
-		res := Res{}
+		res := Response{}
 		s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 		s.Equal("error has occurred", res.Message)
 	})
@@ -198,10 +191,7 @@ func (s *RouterSuite) TestLookUpOriginalUrlErrors() {
 		db.EXPECT().First(gomock.Any()).Return(&gorm.DB{Error: gorm.ErrRecordNotFound})
 		router.ServeHTTP(w, req)
 		s.Equal(http.StatusNotFound, w.Code)
-		type Res struct {
-			Message string `json:"message"`
-		}
-		res := Res{}
+		res := Response{}
 		s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 		s.Equal("url not found", res.Message)
 	})
@@ -211,10 +201,7 @@ func (s *RouterSuite) TestLookUpOriginalUrlErrors() {
 		db.EXPECT().First(gomock.Any()).Return(&gorm.DB{Error: gorm.ErrNotImplemented})
 		router.ServeHTTP(w, req)
 		s.Equal(http.StatusInternalServerError, w.Code)
-		type Res struct {
-			Message string `json:"message"`
-		}
-		res := Res{}
+		res := Response{}
 		s.NoError(json.Unmarshal(w.Body.Bytes(), &res))
 		s.Equal("error has occurred", res.Message)
 	})
