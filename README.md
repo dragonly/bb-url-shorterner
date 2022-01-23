@@ -6,6 +6,10 @@ It converts a long url to a short url in 7 characters, and converts the short ur
 
 Posting the same long url multiple times will produce different short links.
 
+# Dependencies
+
+- golang 1.16+
+
 # Start
 
 Run instructions below to start the server.

@@ -6,7 +6,7 @@ run:
 genmock:
 	mockgen -source=dao/db.go -destination=dao/db_mock.go -package=dao
 
-test: genmock
+test:
 	go test ./...
 
 coverage:
